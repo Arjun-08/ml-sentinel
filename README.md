@@ -2,7 +2,7 @@
 
 Machine-learning systems rarely operate in the same conditions forever.
 
-The data available during training reflects one environment; the data arriving after deployment can gradually—or suddenly—look different. Transaction patterns change, customer behaviour evolves, and the relationship between input features and outcomes can shift.
+The data available during training reflects one environment; the data arriving after deployment can gradually or suddenly look different. Transaction patterns change, customer behaviour evolves, and the relationship between input features and outcomes can shift.
 
 **ML Sentinel** makes these changes observable. It builds a reproducible classification experiment, selects a decision threshold using validation data, evaluates a model on separate baseline and simulated-production datasets, measures feature drift, and produces reports and charts that help explain what changed.
 
@@ -51,10 +51,10 @@ $$
 
 Where:
 
-- \(x\) represents the transaction features.
-- \(\hat{p}(y=1 \mid x)\) is the model's estimated positive-class probability.
-- \(\tau\) is the decision threshold.
-- \(\hat{y}\) is the predicted class.
+- **x** represents the transaction features.
+- **p̂(y = 1 | x)** is the model's estimated positive-class probability.
+- **τ** is the decision threshold.
+- **ŷ** is the predicted class.
 
 A threshold of 0.5 is not automatically optimal. In fraud detection, false negatives can allow fraudulent transactions through, while false positives can send legitimate transactions for unnecessary review.
 
@@ -79,10 +79,10 @@ The report includes complementary metrics because no single score captures every
 
 | Metric | Formula | Interpretation |
 |---|---|---|
-| Accuracy | \(\frac{TP+TN}{TP+TN+FP+FN}\) | Fraction of all predictions that are correct. |
-| Precision | \(\frac{TP}{TP+FP}\) | Fraction of flagged transactions that are positive. |
-| Recall | \(\frac{TP}{TP+FN}\) | Fraction of positive transactions detected. |
-| F1 score | \(\frac{2PR}{P+R}\) | Harmonic mean of precision and recall. |
+| Accuracy | `(TP + TN) / (TP + TN + FP + FN)` | Fraction of all predictions that are correct. |
+| Precision | `TP / (TP + FP)` | Fraction of flagged transactions that are positive. |
+| Recall | `TP / (TP + FN)` | Fraction of positive transactions detected. |
+| F1 score | `2 × Precision × Recall / (Precision + Recall)` | Harmonic mean of precision and recall. |
 | ROC-AUC | Area under the ROC curve | Measures ranking performance across classification thresholds. |
 | PR-AUC | Area under the precision-recall curve | Measures precision-recall performance, particularly useful for imbalanced datasets. |
 
@@ -133,29 +133,12 @@ Using both measures helps distinguish a statistically detectable difference from
 
 A flagged feature is a prompt for investigation—not, by itself, proof of a root cause.
 
-## 4. Model and Implementation
+The experiment trains a `HistGradientBoostingClassifier`, a tree-based boosting model that builds an ensemble of decision trees sequentially. Each new tree helps improve the ensemble's predictions based on errors made by the existing model.
 
-The experiment trains a `HistGradientBoostingClassifier`, a tree-based boosting model that builds an ensemble of decision trees sequentially.
 
-Each new tree helps improve the ensemble's predictions based on errors made by the existing model.
+## 4. Results from the Recorded Run
 
-### Technology Stack
-
-| Component | Technology |
-|---|---|
-| Programming language | Python |
-| Data manipulation | pandas, NumPy |
-| Machine learning | scikit-learn |
-| Statistical testing | SciPy |
-| Visualisation | Matplotlib |
-| Interactive dashboard | Streamlit |
-| Experiment outputs | CSV, JSON, Markdown, PNG |
-
-The main pipeline runs the experiment and writes its artifacts to a timestamped directory. The Streamlit interface provides an interactive way to inspect the monitoring workflow.
-
-## 5. Results from the Recorded Run
-
-The run completed on **4 October 2026**, using random seed `42`, 12,000 training rows, and 2,500 rows in each evaluation dataset.
+The implementation use random seed `42`, 12,000 training rows, and 2,500 rows in each evaluation dataset.
 
 The configured production scenario was **Feature + concept drift**.
 
@@ -243,75 +226,10 @@ Each execution creates a timestamped folder under `outputs/`, keeping results fr
 | `confusion_matrix_production.png` | Production confusion-matrix chart. |
 | `feature_psi.png` | Feature PSI chart. |
 
-### 6.2 Configurable Experiment Settings
 
-The default run uses 12,000 training rows and 2,500 rows per evaluation dataset.
+## 7. Discussion
 
-Experiment settings can be adjusted through environment variables:
-
-```powershell
-$env:ML_SENTINEL_TRAIN_ROWS = "12000"
-$env:ML_SENTINEL_EVAL_ROWS = "2500"
-$env:ML_SENTINEL_SEED = "42"
-$env:ML_SENTINEL_SCENARIO = "Feature + concept drift"
-```
-
-Supported scenarios:
-
-- `Baseline`
-- `Feature drift`
-- `Feature + concept drift`
-
-## 7. Running the Project
-
-### 7.1 Create a Virtual Environment
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-### 7.2 Install Dependencies
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
-### 7.3 Run the Monitoring Pipeline
-
-```powershell
-python main.py
-```
-
-The pipeline generates the experiment results, evaluation metrics, drift reports, charts, and structured output files under `outputs/`.
-
-### 7.4 Launch the Streamlit Dashboard
-
-```powershell
-python -m streamlit run app.py
-```
-
-Use `python -m streamlit run app.py` to start the Streamlit application. Running `python app.py` directly does not launch the Streamlit server correctly.
-
-## 8. Interpreting the Findings
-
-ML Sentinel brings together three connected views of reliability.
-
-**1. Predictive performance**
-
-Measures what the classifier gets right and wrong at a fixed operating threshold.
-
-**2. Input stability**
-
-Identifies which feature distributions have moved relative to the baseline.
-
-**3. Reproducible evidence**
-
-Provides reports, tables, charts, and structured outputs that make each experiment inspectable.
-
-The recorded experiment illustrates why these views belong together. The production simulation changed the positive-class rate, shifted four monitored feature distributions, and produced a different balance of classification metrics.
-
-Rather than reducing these observations to a single pass/fail score, the report preserves the evidence needed to decide what should be investigated next.
+ML Sentinel brings together three complementary views of model reliability: predictive performance, which measures the classifier’s ability to identify positive and negative cases at a fixed decision threshold; input stability, which identifies changes in feature distributions relative to the baseline; and reproducible evidence, which provides reports, tables, charts, and structured outputs to make each experiment inspectable. The recorded experiment demonstrates the value of combining these perspectives: the simulated production environment exhibited a higher positive-class rate, shifts in four monitored feature distributions, and a different balance of classification metrics. Rather than reducing these observations to a single pass/fail score, ML Sentinel presents the evidence needed to understand model behaviour and identify areas for further investigation.
 
 ---
 
