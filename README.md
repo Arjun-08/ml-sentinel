@@ -233,4 +233,5 @@ ML Sentinel brings together three complementary views of model reliability: pred
 
 ---
 
-**The goal is not merely to train a model, but to make its behaviour measurable as the data environment changes.**
+> Note: The goal is not merely to train a model, but to make its behaviour measurable as the data environment changes.
+
